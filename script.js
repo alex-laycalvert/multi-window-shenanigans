@@ -11,11 +11,6 @@ const session = initiateSession();
 // Keeping track of which window is which
 document.title = session.id;
 
-// Making sure to cleanup after we leave the webpage
-window.onbeforeunload = function () {
-    endSession(session.id);
-};
-
 // Setting up the SVG space
 /** @type SVGElement */
 const root = document.querySelector("#root");
@@ -24,7 +19,7 @@ root.setAttribute("height", screen.height);
 root.setAttribute("viewBox", `0 0 ${screen.width} ${screen.height}`);
 root.style.position = "absolute";
 
-setInterval(() => {
+const interval = setInterval(() => {
     // Making sure we don't go somewhere weird, might be unnecessary
     window.scroll(0, 0);
     // Update necessary data
@@ -62,6 +57,12 @@ setInterval(() => {
     // Display all the things
     root.replaceChildren(...nodes);
 }, FRAME_RATE);
+
+// Making sure to cleanup after we leave the webpage
+window.onbeforeunload = function () {
+    clearInterval(interval);
+    endSession(session.id);
+};
 
 /**
  * @typedef Session
