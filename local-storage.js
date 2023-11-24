@@ -1,3 +1,7 @@
+/**
+ * Originally how I implemented this using local storage instead
+ * of the Broadcast API. This just took more work.
+ */
 import { v4 as uuid } from "https://jspm.dev/uuid";
 
 /** Time for between polling in milliseconds */
