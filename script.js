@@ -1,7 +1,7 @@
 import { v4 as uuid } from "https://jspm.dev/uuid";
 
 /** Time for between polling in milliseconds */
-const FRAME_RATE = 100;
+const FRAME_RATE = 50;
 /** Namespace URI for SVGs */
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -59,10 +59,10 @@ const interval = setInterval(() => {
 }, FRAME_RATE);
 
 // Making sure to cleanup after we leave the webpage
-window.onbeforeunload = function () {
+window.addEventListener("beforeunload", () => {
     clearInterval(interval);
     endSession(session.id);
-};
+});
 
 /**
  * @typedef Session
