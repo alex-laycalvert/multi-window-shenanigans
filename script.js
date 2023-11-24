@@ -4,15 +4,12 @@ import { v4 as uuid } from "https://jspm.dev/uuid";
 /** @type string */
 const id = uuid();
 document.title = id;
-const pos = currentPosition();
 
-const nodes = new Map([[id, pos]]);
+/** The currently kept map of every open page and its location/size */
+const nodes = new Map();
 
+/** How we notify other pages of _our_ location and size */
 const bc = new BroadcastChannel("multi_window_shenanigans");
-bc.postMessage({
-    type: "POSITION",
-    data: pos,
-});
 bc.onmessage = (e) => {
     /**
      * @typedef Payload
@@ -23,9 +20,11 @@ bc.onmessage = (e) => {
     const payload = e.data;
     switch (payload.type) {
         case "POSITION":
+            // Update the position of this page
             nodes.set(payload.data.id, payload.data);
             break;
         case "LEAVE":
+            // Remove from the list since they have left the site
             nodes.delete(payload.data.id);
             break;
     }
@@ -50,12 +49,21 @@ root.setAttribute("viewBox", `0 0 ${screen.width} ${screen.height}`);
 root.style.position = "absolute";
 
 const interval = setInterval(() => {
-    const pos = currentPosition();
+    // Update _our_ position and notify everyone else
+    const pos = {
+        id,
+        x: window.screenX,
+        y: window.screenY,
+        w: window.innerWidth,
+        h: window.innerHeight,
+    };
     nodes.set(pos.id, pos);
     bc.postMessage({
         type: "POSITION",
         data: pos,
     });
+
+    // Making sure the SVG root container is in the right spot
     window.scroll(0, 0);
     root.style.left = -pos.x + "px";
     root.style.top = -pos.y + "px";
@@ -67,6 +75,8 @@ const interval = setInterval(() => {
             if (node.id === otherNode.id) {
                 continue;
             }
+            // Draw a line between the center of every open page to all
+            // other open pages.
             const line = document.createElementNS(SVG_NS, "line");
             line.setAttribute("x1", otherNode.x + otherNode.w / 2);
             line.setAttribute("y1", otherNode.y + otherNode.h / 2);
@@ -77,6 +87,7 @@ const interval = setInterval(() => {
             line.setAttribute("id", `${otherNode.id}---${node.id}`);
             svgNodes.push(line);
         }
+        // Draw a circle for every open page in the center of that window
         const circle = document.createElementNS(SVG_NS, "circle");
         circle.setAttribute("id", node.id);
         circle.setAttribute("cx", node.x + node.w / 2);
@@ -84,24 +95,16 @@ const interval = setInterval(() => {
         circle.setAttribute("r", 10);
         svgNodes.push(circle);
     }
+    // Render everything
     root.replaceChildren(...svgNodes);
 }, FRAME_RATE);
 
+// Cleanup
 window.addEventListener("beforeunload", () => {
     clearInterval(interval);
     bc.postMessage({
         type: "LEAVE",
-        data: pos,
+        data: { id },
     });
     bc.close();
 });
-
-function currentPosition() {
-    return {
-        id,
-        x: window.screenX,
-        y: window.screenY,
-        w: window.innerWidth,
-        h: window.innerHeight,
-    };
-}
