@@ -29,6 +29,8 @@ bc.onmessage = (e) => {
     }
 };
 
+let isLocked = false;
+
 /** Time for between polling in milliseconds */
 const RATE = 50;
 /** Namespace URI for SVGs */
@@ -38,10 +40,13 @@ const COLORS = ["red", "green", "yellow", "blue", "black", "magenta", "cyan"];
 const color = COLORS[Math.floor(Math.random() * COLORS.length)];
 /** Thickness of circles/lines */
 const THICKNESS = 8;
+/** When the circle resets to the center */
 
 /** Setting up the elements */
 const video = document.querySelector("video");
 const svg = document.querySelector("svg");
+/** @type HTMLButtonElement */
+const resetButton = document.querySelector("#reset");
 if (!video) {
     throw new Error("`video` element must be present in page");
 }
@@ -71,16 +76,23 @@ async function main() {
         console.warn("Video not allowed");
     }
 
+    const pos = {
+        id,
+        sx: window.screenX,
+        sy: window.screenY,
+        w: window.innerWidth,
+        h: window.innerHeight,
+        x: window.screenX + window.innerWidth / 2,
+        y: window.screenY + window.innerHeight / 2,
+        c: color,
+    };
+
     const interval = setInterval(() => {
         // Update our position and notify everyone else
-        const pos = {
-            id,
-            x: window.screenX,
-            y: window.screenY,
-            w: window.innerWidth,
-            h: window.innerHeight,
-            c: color,
-        };
+        pos.sx = window.screenX;
+        pos.sy = window.screenY;
+        pos.w = window.innerWidth;
+        pos.h = window.innerHeight;
         nodes.set(pos.id, pos);
         bc.postMessage({
             type: "POSITION",
@@ -88,10 +100,10 @@ async function main() {
         });
         // Making sure the video container is in the right spot
         window.scroll(0, 0);
-        video.style.left = -pos.x + "px";
-        video.style.top = -pos.y + "px";
-        svg.style.left = -pos.x + "px";
-        svg.style.top = -pos.y + "px";
+        video.style.left = -pos.sx + "px";
+        video.style.top = -pos.sy + "px";
+        svg.style.left = -pos.sx + "px";
+        svg.style.top = -pos.sy + "px";
 
         const svgNodes = [];
         for (let node of nodes.values()) {
@@ -102,10 +114,10 @@ async function main() {
                 // Draw a line between the center of every open page to all
                 // other open pages.
                 const line = document.createElementNS(SVG_NS, "line");
-                line.setAttribute("x1", otherNode.x + otherNode.w / 2);
-                line.setAttribute("y1", otherNode.y + otherNode.h / 2);
-                line.setAttribute("x2", node.x + node.w / 2);
-                line.setAttribute("y2", node.y + node.h / 2);
+                line.setAttribute("x1", otherNode.x);
+                line.setAttribute("y1", otherNode.y);
+                line.setAttribute("x2", node.x);
+                line.setAttribute("y2", node.y);
                 line.setAttribute("stroke", color);
                 line.setAttribute("stroke-width", THICKNESS);
                 line.setAttribute("id", `${otherNode.id}---${node.id}`);
@@ -114,8 +126,8 @@ async function main() {
             // Draw a circle for every open page in the center of that window
             const circle = document.createElementNS(SVG_NS, "circle");
             circle.setAttribute("id", node.id);
-            circle.setAttribute("cx", node.x + node.w / 2);
-            circle.setAttribute("cy", node.y + node.h / 2);
+            circle.setAttribute("cx", node.x);
+            circle.setAttribute("cy", node.y);
             circle.setAttribute("r", THICKNESS / 2);
             circle.setAttribute("fill", node.c);
             svgNodes.push(circle);
@@ -123,6 +135,26 @@ async function main() {
         // Render everything
         svg.replaceChildren(...svgNodes);
     }, RATE);
+
+    window.addEventListener("mousemove", (e) => {
+        if (isLocked) {
+            return;
+        }
+        pos.x = window.screenX + e.clientX;
+        pos.y = window.screenY + e.clientY;
+    });
+
+    window.addEventListener("mousedown", () => {
+        isLocked = !isLocked;
+    });
+
+    resetButton?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        isLocked = true;
+        pos.x = window.screenX + window.innerWidth / 2;
+        pos.y = window.screenY + window.innerHeight / 2;
+    });
 
     // Cleanup
     window.addEventListener("beforeunload", () => {
