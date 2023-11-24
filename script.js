@@ -60,12 +60,16 @@ svg.setAttribute("viewBox", `0 0 ${screen.width} ${screen.height}`);
 
 async function main() {
     /** Setting up video */
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-    });
-    video.srcObject = stream;
-    video.play();
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+        });
+        video.srcObject = stream;
+        video.play();
+    } catch (e) {
+        console.warn("Video not allowed");
+    }
 
     const interval = setInterval(() => {
         // Update our position and notify everyone else
