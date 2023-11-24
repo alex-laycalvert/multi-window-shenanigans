@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Multi Window Shenanigans</title>
+        <!-- <script type="module" src="/script.js"></script> -->
         <script type="module" src="/script.js"></script>
         <style>
             body {
@@ -16,15 +17,15 @@
             }
 
             video {
-                position: absolute;
+				position: absolute;
                 object-fit: cover;
                 transform: scaleX(-1);
             }
 
-            svg {
-                position: absolute;
-                z-index: 1001;
-            }
+			svg {
+				position: absolute;
+				z-index: 1001;
+			}
 
             * {
                 margin: 0;
@@ -33,7 +34,7 @@
         </style>
     </head>
     <body>
-        <svg></svg>
+		<svg></svg>
         <video></video>
     </body>
 </html>
