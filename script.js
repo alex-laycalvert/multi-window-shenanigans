@@ -5,6 +5,9 @@ const X = new THREE.Vector3(1, 0, 0);
 const Y = new THREE.Vector3(0, 1, 0);
 const Z = new THREE.Vector3(0, 0, 1);
 
+/** @type Map<string, string> */
+const solvedMap = new Map();
+
 const Colors = {
     BLACK: {
         color: 0x000000,
@@ -95,6 +98,9 @@ async function main() {
             current,
             e.button === 0 ? "CLOCKWISE" : "COUNTERCLOCKWISE",
         );
+        if (isSolved(cube)) {
+            console.log("SOLVED");
+        }
     });
     window.addEventListener("mouseup", () => {
         mouse.moving = false;
@@ -414,7 +420,7 @@ function rotateCube(cube, face, rotation) {
 }
 
 /**
- * @returns {THREE.Mesh[][][][]} cube
+ * @returns {THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>[][][][]}
  */
 function generateCube() {
     const cube = [];
@@ -510,11 +516,41 @@ function generateCube() {
             ),
         );
     }
+    for (let z = 0; z < cube.length; z++) {
+        for (let y = 0; y < cube[z].length; y++) {
+            for (let x = 0; x < cube[z][y].length; x++) {
+                for (let i = 0; i < cube[z][y][x].length; i++) {
+                    solvedMap.set(cube[z][y][x][i].uuid, `${z}-${x}-${y}-${i}`);
+                }
+            }
+        }
+    }
     return cube;
 }
 
 /**
- * @param {THREE.Mesh[][][][]} cube
+ * @param {THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>[][][][]} cube
+ */
+function isSolved(cube) {
+    for (let z = 0; z < cube.length; z++) {
+        for (let y = 0; y < cube[z].length; y++) {
+            for (let x = 0; x < cube[z][y].length; x++) {
+                for (let i = 0; i < cube[z][y][x].length; i++) {
+                    if (
+                        solvedMap.get(cube[z][y][x][i].uuid) !==
+                        `${z}-${x}-${y}-${i}`
+                    ) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * @param {THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>[][][][]} cube
  */
 function colorCube(cube) {
     cube[2][0][0][0].material.setValues(Colors.RED);
