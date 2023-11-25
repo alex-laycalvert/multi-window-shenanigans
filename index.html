@@ -6,54 +6,11 @@
         <title>Multi Window Shenanigans</title>
         <script type="module" src="/script.js"></script>
         <style>
-            body {
-                overflow: hidden;
-                width: 100vw;
-                height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-
-            video {
-                position: absolute;
-                object-fit: cover;
-                transform: scaleX(-1);
-            }
-
-            svg {
-                position: absolute;
-                z-index: 1001;
-            }
-
-            * {
-                margin: 0;
-                padding: 0;
-            }
-
-            #info {
-                position: absolute;
-                top: 0;
-                left: 0;
-                background: white;
-                width: 300px;
-                padding: 10px;
-                z-index: 1002;
-            }
+			* {
+				margin: 0;
+				padding: 0;
+			}
         </style>
     </head>
-    <body>
-        <svg></svg>
-        <video></video>
-        <div id="info">
-            Try opening up this website in multiple browser windows and see what
-            happens when you move them around. Click to set/unset the circle
-            position on your screen.
-            <br />
-            <button id="reset">Reset &amp; Lock Position</button>
-            <br />
-            Allow your camera and head to <a href="/xray">go here</a> to try out
-            the XRAY.
-        </div>
-    </body>
+    <body></body>
 </html>
