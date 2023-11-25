@@ -43,7 +43,7 @@ const Colors = {
     },
 };
 
-const settings = {
+const Settings = {
     FIELD_OF_VIEW: 75,
     ASPECT_RATIO: window.innerWidth / window.innerHeight,
     NEAR: 0.1,
@@ -57,17 +57,91 @@ async function main() {
     const pointer = new THREE.Vector2(-1, -1);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-        settings.FIELD_OF_VIEW,
-        settings.ASPECT_RATIO,
-        settings.NEAR,
-        settings.FAR,
+        Settings.FIELD_OF_VIEW,
+        Settings.ASPECT_RATIO,
+        Settings.NEAR,
+        Settings.FAR,
     );
     const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(settings.WIDTH, settings.HEIGHT);
+    renderer.setSize(Settings.WIDTH, Settings.HEIGHT);
     document.body.replaceChildren(renderer.domElement);
 
+    const cube = generateCube();
+    scene.add(...cube.flat(3));
+
+    camera.position.z = 5;
+
+    let clicked = false;
+
+    window.addEventListener("wheel", (e) => {
+        if (e.shiftKey) {
+            camera.position.z += e.deltaY / 500;
+            return;
+        }
+        if (e.ctrlKey) {
+            scene.rotateOnWorldAxis(Z, e.deltaY / 1000);
+            return;
+        }
+
+        const faces = [
+            cube[0][2][0],
+            cube[0][2][1],
+            cube[0][2][2],
+            cube[1][2][0],
+            cube[1][2][1],
+            cube[1][2][2],
+            cube[2][2][0],
+            cube[2][2][1],
+            cube[2][2][2],
+        ];
+
+        if (!clicked) {
+            scene.rotateOnWorldAxis(X, e.deltaY / 1000);
+            scene.rotateOnWorldAxis(Y, e.deltaX / 1000);
+            return;
+        }
+
+        faces.flat(2).forEach((mesh) => {
+            mesh.rotateOnWorldAxis(Y, e.deltaY / 1000);
+        });
+    });
+
+    window.addEventListener("pointermove", (e) => {
+        pointer.x = (e.clientX / Settings.WIDTH) * 2 - 1;
+        pointer.y = (e.clientY / Settings.HEIGHT) * 2 - 1;
+    });
+
+    function render() {
+        window.requestAnimationFrame(render);
+        raycaster.setFromCamera(pointer, camera);
+        colorCube(cube);
+        renderer.render(scene, camera);
+    }
+
+    render();
+}
+
+main();
+
+/**
+ * Returns the sum of the absolute value of each of `nums`
+ * @param {...number} nums
+ * @returns number
+ */
+function absSum(...nums) {
+    let sum = 0;
+    for (let i = 0; i < nums.length; i++) {
+        sum += Math.abs(nums[i]);
+    }
+    return sum;
+}
+
+/**
+ * @returns {THREE.Mesh[][][][]} cube
+ */
+function generateCube() {
     const cube = [];
-    const l = 2;
+    const l = 1.25;
     const s = (2 * l) / 3;
     for (let z = -l; z <= l; z += l) {
         const slice = [];
@@ -151,74 +225,70 @@ async function main() {
         }
         cube.push(slice);
     }
-    scene.add(...cube.flat(3));
-
-    cube[2][1][1][0].material.setValues(Colors.RED);
-    cube[1][1][2][0].material.setValues(Colors.BLUE);
-    cube[1][2][1][0].material.setValues(Colors.WHITE);
-
-    cube[0][1][1][0].material.setValues(Colors.ORANGE);
-    cube[1][1][0][0].material.setValues(Colors.GREEN);
-    cube[1][0][1][0].material.setValues(Colors.YELLOW);
-
-    camera.position.z = 5;
-
-    window.addEventListener("wheel", (e) => {
-        if (e.shiftKey) {
-            camera.position.z += e.deltaY / 500;
-            return;
-        }
-        if (e.ctrlKey) {
-            scene.rotateOnWorldAxis(Z, e.deltaY / 1000);
-            return;
-        }
-        scene.rotateOnWorldAxis(X, e.deltaY / 1000);
-        scene.rotateOnWorldAxis(Y, e.deltaX / 1000);
-    });
-
-    window.addEventListener("click", (e) => {
-        const x = (e.clientX / window.innerWidth) * 2 - 1;
-        const y = -(e.clientY / window.innerHeight) * 2 + 1;
-        // console.log(x, y);
-    });
-
-    window.addEventListener("pointermove", (e) => {
-        pointer.x = (e.clientX / settings.WIDTH) * 2 - 1;
-        pointer.y = (e.clientY / settings.HEIGHT) * 2 - 1;
-    });
-
-    function render() {
-        window.requestAnimationFrame(render);
-        raycaster.setFromCamera(pointer, camera);
-        const intersects = raycaster.intersectObjects(scene.children, false);
-        const intersection = intersects.find(
-            (i) => !(i.object instanceof THREE.LineSegments),
-        );
-        if (intersection) {
-            // console.log(intersection?.object);
-        }
-        renderer.render(scene, camera);
-    }
-
-    render();
-}
-
-main();
-
-/** @param {number} rad */
-function radToDeg(rad) {
-    return (rad * 180) / Math.PI;
+    return cube;
 }
 
 /**
- * Returns the sum of the absolute value of each of `nums`
- * @param {...number} nums
- * @returns number
+ * @param {THREE.Mesh[][][][]} cube
  */
-function absSum(...nums) {
-    let sum = 0;
-    for (let i = 0; i < nums.length; i++) {
-        sum += Math.abs(nums[i]);
-    }
-    return sum;
+function colorCube(cube) {
+    cube[2][0][0][0].material.setValues(Colors.RED);
+    cube[2][0][1][0].material.setValues(Colors.RED);
+    cube[2][0][2][0].material.setValues(Colors.RED);
+    cube[2][1][0][0].material.setValues(Colors.RED);
+    cube[2][1][1][0].material.setValues(Colors.RED);
+    cube[2][1][2][0].material.setValues(Colors.RED);
+    cube[2][2][0][0].material.setValues(Colors.RED);
+    cube[2][2][1][0].material.setValues(Colors.RED);
+    cube[2][2][2][0].material.setValues(Colors.RED);
+
+    cube[0][0][2][1].material.setValues(Colors.BLUE);
+    cube[0][1][2][1].material.setValues(Colors.BLUE);
+    cube[0][2][2][1].material.setValues(Colors.BLUE);
+    cube[1][0][2][0].material.setValues(Colors.BLUE);
+    cube[1][1][2][0].material.setValues(Colors.BLUE);
+    cube[1][2][2][0].material.setValues(Colors.BLUE);
+    cube[2][0][2][1].material.setValues(Colors.BLUE);
+    cube[2][1][2][1].material.setValues(Colors.BLUE);
+    cube[2][2][2][1].material.setValues(Colors.BLUE);
+
+    cube[0][2][0][2].material.setValues(Colors.WHITE);
+    cube[0][2][1][1].material.setValues(Colors.WHITE);
+    cube[0][2][2][2].material.setValues(Colors.WHITE);
+    cube[1][2][0][1].material.setValues(Colors.WHITE);
+    cube[1][2][1][0].material.setValues(Colors.WHITE);
+    cube[1][2][2][1].material.setValues(Colors.WHITE);
+    cube[2][2][0][2].material.setValues(Colors.WHITE);
+    cube[2][2][1][1].material.setValues(Colors.WHITE);
+    cube[2][2][2][2].material.setValues(Colors.WHITE);
+
+    cube[0][0][0][0].material.setValues(Colors.ORANGE);
+    cube[0][0][1][0].material.setValues(Colors.ORANGE);
+    cube[0][0][2][0].material.setValues(Colors.ORANGE);
+    cube[0][1][0][0].material.setValues(Colors.ORANGE);
+    cube[0][1][1][0].material.setValues(Colors.ORANGE);
+    cube[0][1][2][0].material.setValues(Colors.ORANGE);
+    cube[0][2][0][0].material.setValues(Colors.ORANGE);
+    cube[0][2][1][0].material.setValues(Colors.ORANGE);
+    cube[0][2][2][0].material.setValues(Colors.ORANGE);
+
+    cube[0][0][0][1].material.setValues(Colors.GREEN);
+    cube[0][1][0][1].material.setValues(Colors.GREEN);
+    cube[0][2][0][1].material.setValues(Colors.GREEN);
+    cube[1][0][0][0].material.setValues(Colors.GREEN);
+    cube[1][1][0][0].material.setValues(Colors.GREEN);
+    cube[1][2][0][0].material.setValues(Colors.GREEN);
+    cube[2][0][0][1].material.setValues(Colors.GREEN);
+    cube[2][1][0][1].material.setValues(Colors.GREEN);
+    cube[2][2][0][1].material.setValues(Colors.GREEN);
+
+    cube[0][0][0][2].material.setValues(Colors.YELLOW);
+    cube[0][0][1][1].material.setValues(Colors.YELLOW);
+    cube[0][0][2][2].material.setValues(Colors.YELLOW);
+    cube[1][0][0][1].material.setValues(Colors.YELLOW);
+    cube[1][0][1][0].material.setValues(Colors.YELLOW);
+    cube[1][0][2][1].material.setValues(Colors.YELLOW);
+    cube[2][0][0][2].material.setValues(Colors.YELLOW);
+    cube[2][0][1][1].material.setValues(Colors.YELLOW);
+    cube[2][0][2][2].material.setValues(Colors.YELLOW);
 }
